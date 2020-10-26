@@ -15,51 +15,28 @@ function Square (props) {
 }
 
 class Board extends React.Component {
-  constructor (props){
-    super(props);
-    this.state = {
-      squares: Array(9).fill(null),
-      xIsNext: true,
-    };
-  }
+  //Lifting state to Game means:
+  //1)Deleting the constructor
 
-  handleClick(i) {
-    const squares = this.state.squares.slice();
-    
-    //Changing this function to return early
-    //it ignores a click if there's a winner or the Square is filled
-    if (calculateWinner(squares) || squares[i]) {
-      return;
-    }
-    squares[i] = this.state.xIsNext ? 'X' : 'O';
-    this.setState({
-      squares: squares,
-      xIsNext: !this.state.xIsNext,
-    });
-  }
+  //4)Moving handleClick to Game
+
 
   renderSquare(i) {
+    //2) Replacing this.state.squares with this.props.squares
+    //3) Replacing this.handleClick with this.props.onClick
     return (
       <Square 
-        value={this.state.squares[i]} 
-        onClick={()=> this.handleClick(i)}
+        value={this.props.squares[i]} 
+        onClick={()=> this.props.onClick(i)}
       />
     );
   }
 
   render() {
-    //calling the helper function calculateWinner
-    const winner = calculateWinner(this.state.squares);
-    let status;
-    if (winner) {
-      status= `Winner: ${winner}`;
-    }else{
-      status= `Next player: ${this.state.xIsNext ? 'X' : 'O'}`;
-    }
-
+//The Game component is now rendering the game status 
+//so we remove the call to calculateWinner and its display
     return (
       <div>
-        <div className="status">{status}</div>
         <div className="board-row">
           {this.renderSquare(0)}
           {this.renderSquare(1)}
@@ -81,14 +58,60 @@ class Board extends React.Component {
 }
 
 class Game extends React.Component {
+  //We'll add a history array that stores all the states
+  //Because we want it to be displayed in the Game component we'll place it here
+  //This allows us to move the squares state from Board to Game *lifting it up* again!
+  //This means Game has full control over Board
+
+  //First we set up initial state within its constructor
+  constructor (props){
+    super (props);
+    this.state = {
+      history: [{
+        squares: Array(9).fill(null),
+      }],
+      xIsNext: true,
+    }
+  }
+  handleClick(i) {
+    //handleClick is moved from Board and modified to use history
+    const history = this.state.history;
+    const current = history[history.length-1];
+    const squares = current.squares.slice();
+    if (calculateWinner(squares) || squares[i]) {
+      return;
+    }
+    squares[i] = this.state.xIsNext ? 'X' : 'O';
+    this.setState({
+      history: history.concat([{
+        squares: squares,
+      }]),
+      xIsNext: !this.state.xIsNext,
+    });
+  }
   render() {
+    //Updating to use the most recent history entry 
+    //to determine and display game status
+    const history = this.state.history;
+    const current = history[history.length-1];
+    const winner = calculateWinner(current.squares);
+    let status;
+    if (winner) {
+      status= `Winner: ${winner}`;
+    }else{
+      status = `Next player: ${this.state.xIsNext ? 'X' : 'O'}`;
+    }
+
     return (
       <div className="game">
         <div className="game-board">
-          <Board />
+          <Board 
+            squares={current.squares}
+            onClick={(i) => this.handleClick(i)}
+          />
         </div>
         <div className="game-info">
-          <div>{/* status */}</div>
+          <div>{status}</div>
           <ol>{/* TODO */}</ol>
         </div>
       </div>
@@ -96,9 +119,6 @@ class Game extends React.Component {
   }
 }
 
-//This helper function is added:
-//it checks for a winner and returns 'X', 'O' or null
-//it is called in the Board's render function
 function calculateWinner(squares) {
   const lines = [
     [0, 1, 2],
