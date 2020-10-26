@@ -2,7 +2,6 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import './index.css';
 
-
 function Square (props) {
   return (
     <button 
@@ -15,15 +14,7 @@ function Square (props) {
 }
 
 class Board extends React.Component {
-  //Lifting state to Game means:
-  //1)Deleting the constructor
-
-  //4)Moving handleClick to Game
-
-
   renderSquare(i) {
-    //2) Replacing this.state.squares with this.props.squares
-    //3) Replacing this.handleClick with this.props.onClick
     return (
       <Square 
         value={this.props.squares[i]} 
@@ -33,8 +24,6 @@ class Board extends React.Component {
   }
 
   render() {
-//The Game component is now rendering the game status 
-//so we remove the call to calculateWinner and its display
     return (
       <div>
         <div className="board-row">
@@ -58,43 +47,67 @@ class Board extends React.Component {
 }
 
 class Game extends React.Component {
-  //We'll add a history array that stores all the states
-  //Because we want it to be displayed in the Game component we'll place it here
-  //This allows us to move the squares state from Board to Game *lifting it up* again!
-  //This means Game has full control over Board
-
-  //First we set up initial state within its constructor
   constructor (props){
+    //We add stepNumber to show which state we are viewing
     super (props);
     this.state = {
       history: [{
         squares: Array(9).fill(null),
       }],
+      stepNumber: 0,
       xIsNext: true,
     }
   }
   handleClick(i) {
-    //handleClick is moved from Board and modified to use history
-    const history = this.state.history;
+    //We create a slice of history: 
+    //if we go to a previous step and make a new move, we erase all the future
+    const history = this.state.history.slice(0,this.state.stepNumber+1);
     const current = history[history.length-1];
     const squares = current.squares.slice();
     if (calculateWinner(squares) || squares[i]) {
       return;
     }
     squares[i] = this.state.xIsNext ? 'X' : 'O';
+
+    //We add stepNumber so it updates after a new move
     this.setState({
       history: history.concat([{
         squares: squares,
       }]),
+      stepNumber: history.length,
       xIsNext: !this.state.xIsNext,
     });
   }
+
+  //We create the jumpTo method:
+  //it updates the stepNumber
+  //it sets xIsNext to true if the new stepNumber is even
+  jumpTo(step) {
+    this.setState({
+      stepNumber: step,
+      xIsNext: (step %2) ===0,
+    });
+  }
+
   render() {
-    //Updating to use the most recent history entry 
-    //to determine and display game status
+    //We update the current move: it's not always the last one but the selected one!
     const history = this.state.history;
-    const current = history[history.length-1];
+    const current = history[this.state.stepNumber];
     const winner = calculateWinner(current.squares);
+
+    //We use the map() method over the history of moves
+    //For each move a button is created
+    //Strongly recommended: assinging proper KEYS when creating dynamic lists
+    //in this case it is safe to use the 'move' as the key: it's never reordered, deleted or inserted in the middle
+    const moves = history.map((step, move) =>{
+      const desc = move ? `Go to move #${move}` : 'Go to game start';
+      return (
+        <li key={move}>
+          <button onClick={() => this.jumpTo(move)}>{desc}</button>
+        </li>
+      );
+    });
+
     let status;
     if (winner) {
       status= `Winner: ${winner}`;
@@ -112,7 +125,7 @@ class Game extends React.Component {
         </div>
         <div className="game-info">
           <div>{status}</div>
-          <ol>{/* TODO */}</ol>
+          <ol>{moves}</ol>
         </div>
       </div>
     );
