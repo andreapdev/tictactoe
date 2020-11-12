@@ -48,59 +48,81 @@ class Board extends React.Component {
 
 class Game extends React.Component {
   constructor (props){
-    //We add stepNumber to show which state we are viewing
     super (props);
     this.state = {
       history: [{
         squares: Array(9).fill(null),
       }],
+      pos: [],
       stepNumber: 0,
       xIsNext: true,
     }
   }
+
   handleClick(i) {
-    //We create a slice of history: 
-    //if we go to a previous step and make a new move, we erase all the future
     const history = this.state.history.slice(0,this.state.stepNumber+1);
-    const current = history[history.length-1];
-    const squares = current.squares.slice();
+    
+    const current = history[history.length-1]; 
+    const squares = current.squares.slice(); 
     if (calculateWinner(squares) || squares[i]) {
       return;
     }
     squares[i] = this.state.xIsNext ? 'X' : 'O';
 
-    //We add stepNumber so it updates after a new move
-    this.setState({
-      history: history.concat([{
-        squares: squares,
-      }]),
-      stepNumber: history.length,
-      xIsNext: !this.state.xIsNext,
-    });
+    this.setState(prevState => {
+      const slicedPos= prevState.pos.slice(0,prevState.stepNumber);
+      const newPos=slicedPos.concat([i]);
+      return{
+        history: history.concat([{
+          squares: squares,
+        }]),
+        pos: newPos,
+        stepNumber: history.length,
+        xIsNext: !this.state.xIsNext,
+      }
+    }, () => this.updatePos(this.state.pos));
+    
   }
 
-  //We create the jumpTo method:
-  //it updates the stepNumber
-  //it sets xIsNext to true if the new stepNumber is even
   jumpTo(step) {
+
     this.setState({
       stepNumber: step,
       xIsNext: (step %2) ===0,
     });
   }
 
+  updatePos(newPos) {
+    return newPos
+  }
+  displayPos(pos){
+    let col;
+    let row;
+    if(pos<3){
+      row=1;
+      col=pos+1;
+    }else if(pos<6){
+      row=2;
+      col=pos-2;
+    }else if(pos){
+      row=3;
+      col=pos-5;
+    }
+
+    return `(${col}, ${row})`;
+  }
+
+
   render() {
-    //We update the current move: it's not always the last one but the selected one!
     const history = this.state.history;
     const current = history[this.state.stepNumber];
     const winner = calculateWinner(current.squares);
-
-    //We use the map() method over the history of moves
-    //For each move a button is created
-    //Strongly recommended: assinging proper KEYS when creating dynamic lists
-    //in this case it is safe to use the 'move' as the key: it's never reordered, deleted or inserted in the middle
+    const position = this.state.pos;
     const moves = history.map((step, move) =>{
-      const desc = move ? `Go to move #${move}` : 'Go to game start';
+      const pmove=move-1;
+      const desc = move ? `Go to move #${move} at ${this.displayPos(position[pmove])}` : 'Go to game start';
+      console.log(step);
+      console.log(move);
       return (
         <li key={move}>
           <button onClick={() => this.jumpTo(move)}>{desc}</button>
