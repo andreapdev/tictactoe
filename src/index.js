@@ -71,8 +71,15 @@ class Game extends React.Component {
       pos: [],
       stepNumber: 0,
       xIsNext: true,
-      whichBold: -1
+      whichBold: -1,
+      isDescending: false
     }
+  }
+
+  toggleOrder(i) {
+    this.setState(prevState=> {return {
+      isDescending: !prevState.isDescending
+    }})
   }
 
   handleMouseOver(i) {
@@ -178,7 +185,13 @@ class Game extends React.Component {
         </div>
         <div className="game-info">
           <div>{status}</div>
-          <ol>{moves}</ol>
+          {this.state.isDescending ? 
+            <ol reversed>{moves.reverse()}</ol> 
+          :
+            <ol>{moves}</ol>}
+          <button
+            onClick={(i)=>this.toggleOrder(i)}
+          >Change order!</button>
         </div>
       </div>
     );
