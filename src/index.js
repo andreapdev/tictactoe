@@ -3,20 +3,33 @@ import ReactDOM from 'react-dom';
 import './index.css';
 
 function Square (props) {
-  return (
-    <button 
-      className="square" 
-      onClick={props.onClick}
-    >
-      {props.value}
-    </button>
-  );
+  if(props.id==props.whichBold) {
+    return (
+      <button 
+        className="square selected" 
+        onClick={props.onClick}
+      >
+        {props.value}
+      </button>
+    );
+  } else {
+    return (
+      <button 
+        className="square" 
+        onClick={props.onClick}
+      >
+        {props.value}
+      </button>
+    );
+  }
 }
 
 class Board extends React.Component {
   renderSquare(i) {
     return (
       <Square 
+        id={i}
+        whichBold={this.props.whichBold}
         value={this.props.squares[i]} 
         onClick={()=> this.props.onClick(i)}
       />
@@ -56,14 +69,25 @@ class Game extends React.Component {
       pos: [],
       stepNumber: 0,
       xIsNext: true,
+      whichBold: -1
     }
   }
 
-  handleClick(i) {
+  handleMouseOver(i) {
+    if(i.type==="mouseenter"){
+      const selectedPos=i.target.name;
+      this.setState({whichBold:selectedPos}, () => console.log(this.state.whichBold))
+    } else {
+      this.setState({whichBold: -1}, () => console.log(this.state.whichBold))
+    }
+
+  }
+
+  handleClick(i) {  
     const history = this.state.history.slice(0,this.state.stepNumber+1);
-    
     const current = history[history.length-1]; 
     const squares = current.squares.slice(); 
+
     if (calculateWinner(squares) || squares[i]) {
       return;
     }
@@ -121,11 +145,15 @@ class Game extends React.Component {
     const moves = history.map((step, move) =>{
       const pmove=move-1;
       const desc = move ? `Go to move #${move} at ${this.displayPos(position[pmove])}` : 'Go to game start';
-      console.log(step);
-      console.log(move);
       return (
         <li key={move}>
-          <button onClick={() => this.jumpTo(move)}>{desc}</button>
+          <button 
+            name={position[pmove]} onClick={() => this.jumpTo(move)} 
+            onMouseEnter={(i)=> this.handleMouseOver(i)}
+            onMouseLeave={(i)=> this.handleMouseOver(i)}
+          >
+            {desc}
+          </button>
         </li>
       );
     });
@@ -141,6 +169,7 @@ class Game extends React.Component {
       <div className="game">
         <div className="game-board">
           <Board 
+            whichBold={this.state.whichBold}
             squares={current.squares}
             onClick={(i) => this.handleClick(i)}
           />
