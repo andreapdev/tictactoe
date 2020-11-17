@@ -1,8 +1,8 @@
-#Tic-tac-toe game using React
+# Tic-tac-toe game using React
 
 [Here's the codepen link](https://codepen.io/andreapdev/pen/qBNQGoX)
 
-###Including these improvements:
+### Including these improvements:
 
 - [x] Display the location for each move in the format (col, row) in the move history list.
 - [x] Bold the currently selected item in the move list.
