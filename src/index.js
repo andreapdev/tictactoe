@@ -13,6 +13,16 @@ function Square (props) {
         {props.value}
       </button>
     );
+  } else if(props.winnerLine.length>0 && props.winnerLine.includes(props.id)){
+    return (
+      <button 
+        className="square"
+        style={{ color: "red", fontWeight: 1000}} 
+        onClick={props.onClick}
+      >
+        {props.value}
+      </button>
+    );
   } else {
     return (
       <button 
@@ -31,6 +41,7 @@ class Board extends React.Component {
       <Square 
         id={i}
         key={i}
+        winnerLine={this.props.winnerLine}
         whichBold={this.props.whichBold}
         value={this.props.squares[i]} 
         onClick={()=> this.props.onClick(i)}
@@ -40,7 +51,7 @@ class Board extends React.Component {
   renderRow(i) {
     let row = [];
     for(let j=0; j<3; j++){
-      let n=i+j*3;
+      let n= i+j;
       row.push(this.renderSquare(n));
     }
     return (
@@ -49,8 +60,8 @@ class Board extends React.Component {
   }
   threeRows () {
     let rows=[];
-    for(let j=0; j<3; j++){
-      rows.push(this.renderRow(j));
+    for(let i=0; i<7; i+=3){
+      rows.push(this.renderRow(i));
     }
     return rows;
   }
@@ -72,7 +83,8 @@ class Game extends React.Component {
       stepNumber: 0,
       xIsNext: true,
       whichBold: -1,
-      isDescending: false
+      isDescending: false,
+      winnerLine: []
     }
   }
 
@@ -85,9 +97,9 @@ class Game extends React.Component {
   handleMouseOver(i) {
     if(i.type==="mouseenter"){
       const selectedPos=i.target.name;
-      this.setState({whichBold:selectedPos}, () => console.log(this.state.whichBold))
+      this.setState({whichBold:selectedPos}, () => this.update(this.state.whichBold))
     } else {
-      this.setState({whichBold: -1}, () => console.log(this.state.whichBold))
+      this.setState({whichBold: -1}, () => this.update(this.state.whichBold))
     }
 
   }
@@ -96,8 +108,9 @@ class Game extends React.Component {
     const history = this.state.history.slice(0,this.state.stepNumber+1);
     const current = history[history.length-1]; 
     const squares = current.squares.slice(); 
+    let winner = this.calculateWinner(current.squares);
 
-    if (calculateWinner(squares) || squares[i]) {
+    if (winner|| squares[i]) {
       return;
     }
     squares[i] = this.state.xIsNext ? 'X' : 'O';
@@ -113,7 +126,7 @@ class Game extends React.Component {
         stepNumber: history.length,
         xIsNext: !this.state.xIsNext,
       }
-    }, () => this.updatePos(this.state.pos));
+    }, () => this.update(this.state.pos));
     
   }
 
@@ -125,8 +138,8 @@ class Game extends React.Component {
     });
   }
 
-  updatePos(newPos) {
-    return newPos
+  update(x) {
+    return x;
   }
   displayPos(pos){
     let col;
@@ -145,11 +158,31 @@ class Game extends React.Component {
     return `(${col}, ${row})`;
   }
 
+  calculateWinner(squares) {
+    const lines = [
+      [0, 1, 2],
+      [3, 4, 5],
+      [6, 7, 8],
+      [0, 3, 6],
+      [1, 4, 7],
+      [2, 5, 8],
+      [0, 4, 8],
+      [2, 4, 6],
+    ];
+    for (let i = 0; i < lines.length; i++) {
+      const [a, b, c] = lines[i];
+      if (squares[a] && squares[a] === squares[b] && squares[a] === squares[c]) {
+        return [a,b,c];
+      }
+    }
+    return null;
+  }
 
   render() {
     const history = this.state.history;
     const current = history[this.state.stepNumber];
-    const winner = calculateWinner(current.squares);
+    const winnerLine = this.calculateWinner(current.squares)
+    const winner=winnerLine? winnerLine[0]: null;
     const position = this.state.pos;
     const moves = history.map((step, move) =>{
       const pmove=move-1;
@@ -168,8 +201,8 @@ class Game extends React.Component {
     });
 
     let status;
-    if (winner) {
-      status= `Winner: ${winner}`;
+    if (winnerLine) {
+      status= `Winner: ${current.squares[winner]}`;
     }else{
       status = `Next player: ${this.state.xIsNext ? 'X' : 'O'}`;
     }
@@ -179,6 +212,7 @@ class Game extends React.Component {
         <div className="game-board">
           <Board 
             whichBold={this.state.whichBold}
+            winnerLine={winnerLine? winnerLine : []}
             squares={current.squares}
             onClick={(i) => this.handleClick(i)}
           />
@@ -198,25 +232,7 @@ class Game extends React.Component {
   }
 }
 
-function calculateWinner(squares) {
-  const lines = [
-    [0, 1, 2],
-    [3, 4, 5],
-    [6, 7, 8],
-    [0, 3, 6],
-    [1, 4, 7],
-    [2, 5, 8],
-    [0, 4, 8],
-    [2, 4, 6],
-  ];
-  for (let i = 0; i < lines.length; i++) {
-    const [a, b, c] = lines[i];
-    if (squares[a] && squares[a] === squares[b] && squares[a] === squares[c]) {
-      return squares[a];
-    }
-  }
-  return null;
-}
+
 
 // ========================================
 
